@@ -1,0 +1,8 @@
+name: autoencoders
+
+dependencies:
+  - python=3.6
+  - pip:
+      - tensorflow
+      - opencv-python
+      - matplotlib
