@@ -1,15 +1,13 @@
 """Testing convolutional autoencoder with MNIST."""
 
+import matplotlib.pyplot as plt
 import numpy as np
-import seaborn as sns
 import tensorflow as tf
+from tensorflow.python.keras.callbacks import TensorBoard
 from tensorflow.python.keras.layers import Conv2D, MaxPooling2D, \
     UpSampling2D, Input
 from tensorflow.python.keras.models import Model
 from tensorflow.python.keras.optimizers import Adam
-from tensorflow.python.keras.callbacks import TensorBoard
-
-import matplotlib.pyplot as plt
 
 # %% loading data
 mnist = tf.keras.datasets.mnist
