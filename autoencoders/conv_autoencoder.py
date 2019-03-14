@@ -1,10 +1,13 @@
 """Testing convolutional autoencoder with MNIST."""
 
+import numpy as np
+import seaborn as sns
 import tensorflow as tf
 from tensorflow.python.keras.layers import Conv2D, MaxPooling2D, \
     UpSampling2D, Input
 from tensorflow.python.keras.models import Model
 from tensorflow.python.keras.optimizers import Adam
+from tensorflow.python.keras.callbacks import TensorBoard
 
 import matplotlib.pyplot as plt
 
@@ -12,23 +15,25 @@ import matplotlib.pyplot as plt
 mnist = tf.keras.datasets.mnist
 (x_train, y_train),(x_test, y_test) = mnist.load_data()
 
-x = x_train.reshape((60000, 28, 28, 1))
+x = x_train.reshape((60000, 28, 28, 1)) / 255
+# remove number '5' from training set
+x = x[y_train != 5]
 
 # %% model architecture
 inputs = Input(shape=(28, 28, 1))
 
 h = Conv2D(16, (3, 3), activation='relu', padding='same')(inputs)
-h = MaxPooling2D((2, 2))(h)
+h = MaxPooling2D((4, 4))(h)
 h = Conv2D(8, (3, 3), activation='relu', padding='same')(h)
-# h = MaxPooling2D((2, 2))(h)
-# h = Conv2D(8, (3, 3), activation='relu', padding='same')(h)
+h = MaxPooling2D((2, 2))(h)
+h = Conv2D(4, (3, 3), activation='relu', padding='same')(h)
 encoded = MaxPooling2D((2, 2), padding='same')(h)
 
-h = Conv2D(8, (3, 3), activation='relu', padding='same')(encoded)
-h = UpSampling2D((2, 2))(h)
+h = Conv2D(4, (3, 3), activation='relu', padding='same')(encoded)
+h = UpSampling2D((4, 4))(h)
 h = Conv2D(8, (3, 3), activation='relu', padding='same')(h)
-#h = UpSampling2D((2, 2))(h)
-#h = Conv2D(16, (3, 3), activation='relu')(h)
+h = UpSampling2D((2, 2))(h)
+h = Conv2D(16, (3, 3), activation='relu')(h)
 h = UpSampling2D((2, 2))(h)
 
 outputs = Conv2D(1, (3, 3), activation='sigmoid', padding='same')(h)
@@ -36,18 +41,40 @@ outputs = Conv2D(1, (3, 3), activation='sigmoid', padding='same')(h)
 # %% Compile model
 
 model = Model(inputs=inputs, outputs=outputs)
-model.compile(optimizer=Adam(lr=0.0001), loss='binary_crossentropy')
+model.compile(optimizer=Adam(lr=0.001), loss='binary_crossentropy')
+print(model.summary())
 
 # %% train model
-model.fit(x, x, batch_size=64, epochs=3, verbose=2, validation_split=0.05,
-          )
+
+callbacks = [
+    TensorBoard(log_dir='./logs/run6', batch_size=64, write_images=True)
+]
+
+model.fit(x, x, batch_size=64, epochs=20, verbose=2, validation_split=0.02,
+          callbacks=callbacks)
 
 # %% predict for new data
-y = x_test[15, :, :].reshape((1, 28, 28, 1))
-pred = model.predict(y)
+x_test_norm = x_test / 255
+x_test_expand = np.expand_dims(x_test_norm, axis=4)
+x_pred = model.predict(x_test_expand).squeeze()
 
-plt.imshow(y.reshape((28, 28)))
+x_diff = np.abs(x_test_norm - x_pred)
+
+# %% visualize example
+i = 8
+plt.imshow(x_test_norm[i])
+plt.show()
+plt.imshow(x_pred[i])
+plt.show()
+plt.imshow(x_diff[i])
 plt.show()
 
-plt.imshow(pred.reshape((28, 28)))
+# %% difference per digit
+
+# calculate norm of each difference, vectorized
+x_diff_reshaped = x_diff.reshape(x_diff.shape[0], -1)
+norms = np.linalg.norm(x_diff_reshaped, axis=1)
+
+# plot distributions of norms
+sns.boxplot(y_test, norms)
 plt.show()
