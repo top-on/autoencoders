@@ -6,3 +6,5 @@ dependencies:
       - tensorflow-gpu
       - opencv-python
       - matplotlib
+      - pydot
+      - graphviz
