@@ -189,7 +189,6 @@ if __name__ == '__main__':
                 batch_size=batch_size,
                 validation_data=(x_test, None),
                 verbose=2)
-        vae.save_weights('vae_mlp_mnist.h5')
 
     plot_results(models,
                  data,
